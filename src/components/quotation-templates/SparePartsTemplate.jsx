@@ -140,8 +140,10 @@ const SparePartsTemplate = forwardRef(({ formData, companySettings, exchangeRate
     return defaultGetImageUrl(url)
   }
 
+  const isIndia = (formData.country || '').toLowerCase().includes('india')
+  const hasClientGst = Boolean(isIndia && formData.gstNumber && formData.gstNumber.trim().length > 0)
   const isWithoutGst = formData.gstOption === 'withoutGst'
-  const isGstEnabled = !isWithoutGst && formData.currency !== 'EUR' && (companySettings?.hasGst === true || companySettings?.hasGst === 'yes' || parseFloat(formData.gstPercent || 0) > 0 || parseFloat(formData.gstAmount || 0) > 0)
+  const isGstEnabled = hasClientGst && !isWithoutGst && formData.currency !== 'EUR' && (companySettings?.hasGst === true || companySettings?.hasGst === 'yes' || parseFloat(formData.gstPercent || 0) > 0 || parseFloat(formData.gstAmount || 0) > 0)
 
   const SANS = "'Inter', Arial, sans-serif"
 
@@ -242,8 +244,15 @@ const SparePartsTemplate = forwardRef(({ formData, companySettings, exchangeRate
             <span style={{ fontWeight: '700' }}>{getQuotationNumber()}</span>
           </td>
           <td style={{ width: '50%', padding: companySettings?.pdfHeaderImage ? '4px 6mm 2px 6mm' : '4px 0 2px 0', fontFamily: SANS, fontSize: '9.5pt', color: '#000000', border: 'none', textAlign: 'right' }}>
-            <span>Quotation Date: </span>
-            <span style={{ fontWeight: '700' }}>{formatDate(formData.date, 'N/A')}</span>
+            <div>
+              <span>Quotation Date: </span>
+              <span style={{ fontWeight: '700' }}>{formatDate(formData.date, 'N/A')}</span>
+            </div>
+            {hasClientGst && companySettings?.gstNumber && companySettings?.pdfHeaderImage && (
+              <div style={{ marginTop: '2px', fontWeight: '700' }}>
+                GSTIN: {companySettings.gstNumber}
+              </div>
+            )}
           </td>
         </tr>
       </tbody>
@@ -290,6 +299,24 @@ const SparePartsTemplate = forwardRef(({ formData, companySettings, exchangeRate
                     }}>
                       {companySettings?.companyName || 'YOUR COMPANY NAME'}
                     </div>
+                    {companySettings?.address && (
+                      <div style={{ fontSize: '9pt', color: '#333333', marginTop: '3px', whiteSpace: 'pre-line' }}>
+                        {companySettings.address}
+                        {(companySettings.city || companySettings.state || companySettings.pincode) && (
+                          <div>{[companySettings.city, companySettings.state, companySettings.pincode].filter(Boolean).join(', ')}</div>
+                        )}
+                        {hasClientGst && companySettings?.gstNumber && (
+                          <div style={{ fontWeight: '700', color: '#000000', marginTop: '2px' }}>
+                            GSTIN : {companySettings.gstNumber}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {(!companySettings?.address && hasClientGst && companySettings?.gstNumber) && (
+                      <div style={{ fontSize: '9pt', fontWeight: '700', color: '#000000', marginTop: '3px' }}>
+                        GSTIN : {companySettings.gstNumber}
+                      </div>
+                    )}
                   </td>
                   <td style={{
                     verticalAlign: 'top',
@@ -365,6 +392,9 @@ const SparePartsTemplate = forwardRef(({ formData, companySettings, exchangeRate
             </div>
           )}
           {formData.address && <div style={{ whiteSpace: 'pre-line' }}>{formData.address}</div>}
+          {hasClientGst && (
+            <div style={{ fontWeight: '700' }}>GSTIN : {formData.gstNumber.trim()}</div>
+          )}
           {formData.customerMobile && (
             <div>mobile : {formData.customerMobile}</div>
           )}

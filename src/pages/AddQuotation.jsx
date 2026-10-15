@@ -77,7 +77,6 @@ export default function AddQuotation() {
 
   // Loaded Company Settings
   const [companySettings, setCompanySettings] = useState(null)
-  const isGstEnabled = companySettings?.hasGst === true || companySettings?.hasGst === 'yes'
 
   // Tab workspace state: 'customer' | 'requirements' | 'products' | 'transport_installation' | 'section' | 'preview'
   const [activeTab, setActiveTab] = useState('customer')
@@ -171,6 +170,10 @@ export default function AddQuotation() {
       gstPercent: ''
     }
   })
+
+  const isIndia = (formData.country || '').toLowerCase().includes('india')
+  const hasClientGst = Boolean(isIndia && formData.gstNumber && formData.gstNumber.trim().length > 0)
+  const isGstEnabled = hasClientGst && formData.currency !== 'EUR' && (companySettings?.hasGst === true || companySettings?.hasGst === 'yes')
 
   // Mini state for adding/configuring a single item
   const [newItem, setNewItem] = useState({
@@ -1853,7 +1856,11 @@ export default function AddQuotation() {
     const dbTaxableAmount = dbSubTotal - dbDiscountAmount
 
     let dbGstAmount = 0
-    if (companySettings?.hasGst === true || companySettings?.hasGst === 'yes') {
+    const isIndia = (formData.country || '').toLowerCase().includes('india')
+    const hasClientGst = Boolean(isIndia && formData.gstNumber && formData.gstNumber.trim().length > 0)
+    const isGstEnabled = hasClientGst && (companySettings?.hasGst === true || companySettings?.hasGst === 'yes')
+
+    if (isGstEnabled) {
       if (formData.businessType === 'service') {
         const gstRate = parseFloat(formData.gstPercent || 0)
         dbGstAmount = dbTaxableAmount * (gstRate / 100)
