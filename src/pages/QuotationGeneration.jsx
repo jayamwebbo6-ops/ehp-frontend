@@ -320,8 +320,8 @@ export default function QuotationGeneration() {
   })
 
   const [loading, setLoading] = useState(true);
-  const [sortField, setSortField] = useState('quoteNo')
-  const [sortOrder, setSortOrder] = useState('asc')
+  const [sortField, setSortField] = useState('lastUpdated')
+  const [sortOrder, setSortOrder] = useState('desc')
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -693,6 +693,12 @@ export default function QuotationGeneration() {
 
   // Sort by selected column, with quote number and version as secondary criteria
   const sortedQuotations = [...filteredQuotations].sort((a, b) => {
+    if (sortField === 'lastUpdated') {
+      const dateA = new Date(a.lastUpdated || a.updatedAt || a.createdAt || a.date || 0)
+      const dateB = new Date(b.lastUpdated || b.updatedAt || b.createdAt || b.date || 0)
+      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB
+    }
+
     let valA = a[sortField] || ''
     let valB = b[sortField] || ''
 
@@ -937,19 +943,7 @@ export default function QuotationGeneration() {
                       />
                     </th>
                   )}
-                  <th
-                    className="px-6 py-4 cursor-pointer select-none hover:bg-slate-100 hover:text-slate-800 transition-colors"
-                    onClick={() => handleSort('quoteNo')}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span>Quotation Number</span>
-                      {sortField === 'quoteNo' ? (
-                        sortOrder === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-brand-primary" /> : <ArrowDown className="w-3.5 h-3.5 text-brand-primary" />
-                      ) : (
-                        <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 opacity-60" />
-                      )}
-                    </div>
-                  </th>
+                  <th className="px-6 py-4">Quotation Number</th>
                   <th className="px-6 py-4">Customer Name</th>
                   <th className="px-6 py-4">Mobile Number</th>
                   <th className="px-6 py-4">Email Address</th>
