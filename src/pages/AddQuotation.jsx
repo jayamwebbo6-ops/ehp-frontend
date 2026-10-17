@@ -92,7 +92,7 @@ export default function AddQuotation() {
     version: 1,
     date: new Date().toISOString().split('T')[0],
     validity: '',
-    currency: 'EUR',
+    currency: '',
     refNo: '',
     isConfidential: false,
     subject: '',
@@ -171,8 +171,8 @@ export default function AddQuotation() {
     }
   })
 
-  const isIndia = (formData.country || '').toLowerCase().includes('india')
-  const hasClientGst = Boolean(isIndia && formData.gstNumber && formData.gstNumber.trim().length > 0)
+  const isINR = formData.currency === 'INR'
+  const hasClientGst = Boolean(isINR && formData.gstNumber && formData.gstNumber.trim().length > 0)
   const isGstEnabled = hasClientGst && formData.currency !== 'EUR' && (companySettings?.hasGst === true || companySettings?.hasGst === 'yes')
 
   // Mini state for adding/configuring a single item
@@ -555,7 +555,7 @@ export default function AddQuotation() {
 
             let loadedGstOption = quoteToEdit.gstOption
             if (!loadedGstOption) {
-              if ((quoteToEdit.country || '').toLowerCase().includes('india')) {
+              if (quoteToEdit.currency === 'INR' || (quoteToEdit.country || '').toLowerCase().includes('india')) {
                 loadedGstOption = (quoteToEdit.gstAmount > 0 || quoteToEdit.gstPercent > 0) ? 'withGst' : 'withoutGst'
               } else {
                 loadedGstOption = 'withoutGst'
@@ -646,7 +646,7 @@ export default function AddQuotation() {
     return customerCountry !== '' && companyCountry !== '' && customerCountry === companyCountry
   }
 
-  const currSymbol = getCurrencySymbol(formData.currency)
+  const currSymbol = formData.currency === 'EUR' ? '€' : (formData.currency === 'INR' ? '₹' : '')
 
   // Local amount formatter that respects the roundOff toggle and currency
   const fmtAmt = (n) => {
@@ -685,8 +685,8 @@ export default function AddQuotation() {
     const taxableAmount = subTotal - discountAmount
 
     let gstAmount = 0
-    const isIndia = (formData.country || '').toLowerCase().includes('india')
-    const hasClientGst = Boolean(isIndia && formData.gstNumber && formData.gstNumber.trim().length > 0)
+    const isINR = formData.currency === 'INR'
+    const hasClientGst = Boolean(isINR && formData.gstNumber && formData.gstNumber.trim().length > 0)
     const isGstEnabled = hasClientGst && (formData.currency !== 'EUR') && (companySettings?.hasGst === true || companySettings?.hasGst === 'yes')
 
     if (isGstEnabled) {
@@ -1005,29 +1005,26 @@ export default function AddQuotation() {
         [name]: type === 'checkbox' ? checked : value
       }
 
-      if (name === 'country' || name === 'currency') {
-        let newCurrency = prev.currency
-        if (name === 'country') {
-          const valLower = (value || '').toLowerCase()
-          if (valLower.includes('europe') || valLower.includes('germany') || valLower.includes('france')) {
-            newCurrency = 'EUR'
-            updated.gstNumber = ''
-            updated.gstPercent = 0
-            if (updated.items && updated.items.length > 0) {
-              updated.items = updated.items.map(item => ({ ...item, gstPercent: 0 }))
-            }
-          } else if (valLower.includes('india')) {
-            newCurrency = 'INR'
-            const hasGst = updated.gstNumber && updated.gstNumber.trim().length > 0
-            const defaultGstRate = parseFloat(companySettings?.gstRate || companySettings?.igstRate) || 18
-            const activeRate = hasGst ? defaultGstRate : 0
-            updated.gstPercent = activeRate
-            if (updated.items && updated.items.length > 0) {
-              updated.items = updated.items.map(item => ({ ...item, gstPercent: activeRate }))
-            }
+      if (name === 'currency') {
+        let newCurrency = value
+        if (newCurrency === 'EUR') {
+          updated.gstPercent = 0
+          if (updated.items && updated.items.length > 0) {
+            updated.items = updated.items.map(item => ({ ...item, gstPercent: 0 }))
           }
-        } else if (name === 'currency') {
-          newCurrency = value
+        } else if (newCurrency === 'INR') {
+          const hasGst = updated.gstNumber && updated.gstNumber.trim().length > 0
+          const defaultGstRate = parseFloat(companySettings?.gstRate || companySettings?.igstRate) || 18
+          const activeRate = hasGst ? defaultGstRate : 0
+          updated.gstPercent = activeRate
+          if (updated.items && updated.items.length > 0) {
+            updated.items = updated.items.map(item => ({ ...item, gstPercent: activeRate }))
+          }
+        } else {
+          updated.gstPercent = 0
+          if (updated.items && updated.items.length > 0) {
+            updated.items = updated.items.map(item => ({ ...item, gstPercent: 0 }))
+          }
         }
 
         const oldCurrency = prev.currency
@@ -1563,6 +1560,9 @@ export default function AddQuotation() {
       if (!formData.country || !formData.country.trim()) {
         newErrors.country = 'Country is required'
       }
+      if (!formData.currency || !formData.currency.trim()) {
+        newErrors.currency = 'Currency is required'
+      }
 
       const phoneRegex = /^[0-9+\s-]{8,15}$/
       if (!formData.customerMobile.trim()) {
@@ -1856,8 +1856,7 @@ export default function AddQuotation() {
     const dbTaxableAmount = dbSubTotal - dbDiscountAmount
 
     let dbGstAmount = 0
-    const isIndia = (formData.country || '').toLowerCase().includes('india')
-    const hasClientGst = Boolean(isIndia && formData.gstNumber && formData.gstNumber.trim().length > 0)
+    const hasClientGst = Boolean(isINR && formData.gstNumber && formData.gstNumber.trim().length > 0)
     const isGstEnabled = hasClientGst && (companySettings?.hasGst === true || companySettings?.hasGst === 'yes')
 
     if (isGstEnabled) {
@@ -1892,7 +1891,7 @@ export default function AddQuotation() {
       amountInWords: convertNumberToWords(isINR ? dbGrandTotal : formData.grandTotal),
       bankDetails: bankDetailsPayload,
       country: formData.country || '',
-      gstOption: formData.gstOption || ((formData.country || '').toLowerCase().includes('india') ? 'withGst' : 'withoutGst'),
+      gstOption: formData.gstOption || (formData.currency === 'INR' ? 'withGst' : 'withoutGst'),
       transportStorage: dbTransport,
       installation: dbInstallation,
       deliveryTerms: formData.deliveryTerms || {
@@ -2233,18 +2232,20 @@ export default function AddQuotation() {
                   </label>
                   <select
                     name="currency"
-                    value={formData.currency || 'EUR'}
+                    value={formData.currency || ''}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-[5px] text-sm focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent bg-white font-semibold transition-all"
+                    className={`w-full px-3 py-2 border rounded-[5px] text-sm focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent bg-white font-semibold transition-all ${errors.currency ? 'border-rose-350 bg-rose-50/10' : 'border-slate-200'}`}
                   >
-                    <option value="EUR">EUR (€) - Euro (Default)</option>
+                    <option value="">-- Select Currency --</option>
+                    <option value="EUR">EUR (€) - Euro</option>
                     <option value="INR">INR (₹) - Indian Rupee</option>
                   </select>
+                  {errors.currency && <p className="text-[11px] text-rose-600 font-semibold">{errors.currency}</p>}
                 </div>
               </div>
 
-              {/* GST Number - Only for India */}
-              {(formData.country || '').toLowerCase().includes('india') && (
+              {/* GST Number - Based on Currency INR */}
+              {formData.currency === 'INR' && (
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
