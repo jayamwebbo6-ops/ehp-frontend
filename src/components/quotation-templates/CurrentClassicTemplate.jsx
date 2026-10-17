@@ -129,8 +129,8 @@ const CurrentClassicTemplate = forwardRef(function CurrentClassicTemplate(
   { formData, companySettings, getImageUrl, isStateMatching },
   ref
 ) {
-  const isIndia = (formData.country || '').toLowerCase().includes('india');
-  const hasClientGst = Boolean(isIndia && formData.gstNumber && formData.gstNumber.trim().length > 0);
+  const isINR = formData.currency === 'INR';
+  const hasClientGst = Boolean(isINR && formData.gstNumber && formData.gstNumber.trim().length > 0);
   const isWithoutGst = formData.gstOption === 'withoutGst';
   const isGstEnabled = hasClientGst && !isWithoutGst && formData.currency !== 'EUR' && (companySettings?.hasGst === true || companySettings?.hasGst === 'yes' || parseFloat(formData.gstPercent || 0) > 0 || parseFloat(formData.gstAmount || 0) > 0);
 

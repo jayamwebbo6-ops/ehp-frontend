@@ -130,7 +130,7 @@ export default function AddSparePartQuotation() {
     version: 1,
     date: new Date().toISOString().split('T')[0],
     validity: '',
-    currency: 'EUR',
+    currency: '',
     refNo: '',
     isConfidential: false,
     subject: '',
@@ -353,8 +353,8 @@ export default function AddSparePartQuotation() {
             }
 
             setFormData(prev => {
-              const isIndia = (prev.country || '').toLowerCase().includes('india')
-              const hasClientGst = Boolean(isIndia && prev.gstNumber && prev.gstNumber.trim().length > 0)
+              const isINR = prev.currency === 'INR'
+              const hasClientGst = Boolean(isINR && prev.gstNumber && prev.gstNumber.trim().length > 0)
               return {
                 ...prev,
                 gstPercent: hasClientGst ? defaultGstRate : 0,
@@ -410,7 +410,7 @@ export default function AddSparePartQuotation() {
 
             let loadedGstOption = quoteToEdit.gstOption
             if (!loadedGstOption) {
-              if ((quoteToEdit.country || '').toLowerCase().includes('india')) {
+              if (quoteToEdit.currency === 'INR' || (quoteToEdit.country || '').toLowerCase().includes('india')) {
                 loadedGstOption = (quoteToEdit.gstAmount > 0 || quoteToEdit.gstPercent > 0) ? 'withGst' : 'withoutGst'
               } else {
                 loadedGstOption = 'withoutGst'
@@ -475,8 +475,8 @@ export default function AddSparePartQuotation() {
   // Recalculate financial totals
   useEffect(() => {
     const isEUR = formData.currency === 'EUR'
-    const isIndia = (formData.country || '').toLowerCase().includes('india')
-    const hasClientGst = Boolean(isIndia && formData.gstNumber && formData.gstNumber.trim().length > 0)
+    const isINR = formData.currency === 'INR'
+    const hasClientGst = Boolean(isINR && formData.gstNumber && formData.gstNumber.trim().length > 0)
     const isGstEnabled = !isEUR && hasClientGst
 
     const subTotal = formData.items.reduce((sum, item) => sum + (item.qty * parseFloat(item.price || 0)), 0)
@@ -665,28 +665,26 @@ export default function AddSparePartQuotation() {
     setFormData(prev => {
       let updated = { ...prev, [name]: type === 'checkbox' ? checked : value }
 
-      if (name === 'country' || name === 'currency') {
-        let newCurrency = prev.currency
-        if (name === 'country') {
-          const valLower = (value || '').toLowerCase()
-          if (valLower.includes('europe') || valLower.includes('germany') || valLower.includes('france') || valLower.includes('italy')) {
-            newCurrency = 'EUR'
-            updated.gstPercent = 0
-            if (updated.items && updated.items.length > 0) {
-              updated.items = updated.items.map(item => ({ ...item, gstPercent: 0 }))
-            }
-          } else if (valLower.includes('india')) {
-            newCurrency = 'INR'
-            const hasGst = updated.gstNumber && updated.gstNumber.trim().length > 0
-            const defaultGstRate = parseFloat(companySettings?.gstRate || companySettings?.igstRate) || 18
-            const activeRate = hasGst ? defaultGstRate : 0
-            updated.gstPercent = activeRate
-            if (updated.items && updated.items.length > 0) {
-              updated.items = updated.items.map(item => ({ ...item, gstPercent: activeRate }))
-            }
+      if (name === 'currency') {
+        let newCurrency = value
+        if (newCurrency === 'EUR') {
+          updated.gstPercent = 0
+          if (updated.items && updated.items.length > 0) {
+            updated.items = updated.items.map(item => ({ ...item, gstPercent: 0 }))
           }
-        } else if (name === 'currency') {
-          newCurrency = value
+        } else if (newCurrency === 'INR') {
+          const hasGst = updated.gstNumber && updated.gstNumber.trim().length > 0
+          const defaultGstRate = parseFloat(companySettings?.gstRate || companySettings?.igstRate) || 18
+          const activeRate = hasGst ? defaultGstRate : 0
+          updated.gstPercent = activeRate
+          if (updated.items && updated.items.length > 0) {
+            updated.items = updated.items.map(item => ({ ...item, gstPercent: activeRate }))
+          }
+        } else {
+          updated.gstPercent = 0
+          if (updated.items && updated.items.length > 0) {
+            updated.items = updated.items.map(item => ({ ...item, gstPercent: 0 }))
+          }
         }
 
         const oldCurrency = prev.currency
@@ -761,14 +759,6 @@ export default function AddSparePartQuotation() {
         if (found) {
           const custCountry = found.country || updated.country || ''
           let custCurrency = updated.currency
-          if (custCountry) {
-            const valLower = custCountry.toLowerCase()
-            if (valLower.includes('europe') || valLower.includes('germany')) {
-              custCurrency = 'EUR'
-            } else if (valLower.includes('india')) {
-              custCurrency = 'INR'
-            }
-          }
 
           const oldCurrency = prev.currency
           if (custCurrency !== oldCurrency) {
@@ -816,7 +806,7 @@ export default function AddSparePartQuotation() {
           }
 
           const filledGst = (found.gst || updated.gstNumber || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 15)
-          const hasGst = Boolean(filledGst && filledGst.trim().length > 0 && (custCountry || '').toLowerCase().includes('india'))
+          const hasGst = Boolean(filledGst && filledGst.trim().length > 0 && custCurrency === 'INR')
           const defaultGstRate = parseFloat(companySettings?.gstRate || companySettings?.igstRate) || 18
           const activeRate = hasGst ? defaultGstRate : 0
 
@@ -875,9 +865,9 @@ export default function AddSparePartQuotation() {
         unitPrice = parseFloat((rawPrice / exchangeRate).toFixed(2))
       }
 
-      const isIndia = (formData.country || '').toLowerCase().includes('india')
-      const hasClientGst = Boolean(isIndia && formData.gstNumber && formData.gstNumber.trim().length > 0)
-      const partGst = (hasClientGst && formData.currency !== 'EUR') ? (sp.gstPercent || formData.gstPercent || '') : ''
+      const isINR = formData.currency === 'INR'
+      const hasClientGst = Boolean(isINR && formData.gstNumber && formData.gstNumber.trim().length > 0)
+      const partGst = hasClientGst ? (sp.gstPercent || formData.gstPercent || '') : ''
 
       setNewItem({
         productId: sp._id || sp.id,
@@ -906,9 +896,9 @@ export default function AddSparePartQuotation() {
       return
     }
 
-    const isIndia = (formData.country || '').toLowerCase().includes('india')
-    const hasClientGst = Boolean(isIndia && formData.gstNumber && formData.gstNumber.trim().length > 0)
-    const activeGstPercent = (hasClientGst && formData.currency !== 'EUR')
+    const isINR = formData.currency === 'INR'
+    const hasClientGst = Boolean(isINR && formData.gstNumber && formData.gstNumber.trim().length > 0)
+    const activeGstPercent = hasClientGst
       ? (newItem.gstPercent !== undefined && newItem.gstPercent !== '' ? newItem.gstPercent : formData.gstPercent)
       : 0
 
@@ -1054,6 +1044,7 @@ export default function AddSparePartQuotation() {
       }
       if (!formData.companyName.trim()) errs.companyName = 'Company name is required'
       if (!formData.customerName.trim()) errs.customerName = 'Customer contact name is required'
+      if (!formData.currency || !formData.currency.trim()) errs.currency = 'Currency is required'
     } else if (tab === 'products') {
       if (formData.items.length === 0) {
         showNotification('error', 'Please add at least one spare part item')
@@ -1137,7 +1128,7 @@ export default function AddSparePartQuotation() {
         ...formData,
         bankDetails: bankDetailsPayload,
         productType: 'Spare Parts',
-        gstOption: formData.gstOption || ((formData.country || '').toLowerCase().includes('india') ? 'withGst' : 'withoutGst'),
+        gstOption: formData.gstOption || (formData.currency === 'INR' ? 'withGst' : 'withoutGst'),
         transportStorage: {
           show: false,
           name: formData.transportStorage?.name || '',
@@ -1204,7 +1195,7 @@ export default function AddSparePartQuotation() {
     }
   }
 
-  const currSymbol = formData.currency === 'EUR' ? '€' : '₹'
+  const currSymbol = formData.currency === 'EUR' ? '€' : (formData.currency === 'INR' ? '₹' : '')
 
   return (
     <div className="space-y-6">
@@ -1424,18 +1415,20 @@ export default function AddSparePartQuotation() {
                   </label>
                   <select
                     name="currency"
-                    value={formData.currency || 'EUR'}
+                    value={formData.currency || ''}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-[5px] text-sm focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all bg-white font-semibold text-slate-800"
+                    className={`w-full px-3 py-2 border rounded-[5px] text-sm focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all bg-white font-semibold text-slate-800 ${errors.currency ? 'border-rose-350 bg-rose-50/10' : 'border-slate-200'}`}
                   >
-                    <option value="EUR">EUR (€) - Euro (Default)</option>
+                    <option value="">-- Select Currency --</option>
+                    <option value="EUR">EUR (€) - Euro</option>
                     <option value="INR">INR (₹) - Indian Rupee</option>
                   </select>
+                  {errors.currency && <p className="text-[11px] text-rose-600 font-semibold">{errors.currency}</p>}
                 </div>
               </div>
 
-              {/* GST Number - Only for India */}
-              {(formData.country || '').toLowerCase().includes('india') && (
+              {/* GST Number - Based on Currency INR */}
+              {formData.currency === 'INR' && (
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
@@ -1862,8 +1855,8 @@ export default function AddSparePartQuotation() {
                   <span className="font-bold text-slate-800">{currSymbol}{fmtAmt(formData.taxableAmount)}</span>
                 </div>
 
-                {/* GST (%) - Applicable for INR when India and Client GST is entered */}
-                {formData.currency !== 'EUR' && (formData.country || '').toLowerCase().includes('india') && formData.gstNumber && formData.gstNumber.trim().length > 0 && (
+                {/* GST (%) - Applicable for INR when Client GST is entered */}
+                {formData.currency === 'INR' && formData.gstNumber && formData.gstNumber.trim().length > 0 && (
                   <div className="flex justify-between items-center">
                     <span className="text-slate-500 flex items-center gap-1.5">
                       <span>GST (%) :</span>
