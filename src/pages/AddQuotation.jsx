@@ -17,7 +17,8 @@ import {
   ArrowUp,
   ArrowDown,
   Package,
-  Calculator
+  Calculator,
+  ListPlus
 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Quill from 'quill'
@@ -2809,8 +2810,8 @@ export default function AddQuotation() {
                 onClick={handleAddItem}
                 className="flex items-center justify-center gap-2 px-6 py-2.5 bg-brand-primary hover:bg-brand-primary-light text-white font-semibold text-xs rounded-[5px] transition-all shadow-md active:scale-[0.98] cursor-pointer whitespace-nowrap"
               >
-                <Plus className="w-4 h-4" />
-                <span>Submit</span>
+                <ListPlus className="w-4 h-4" />
+                <span>Add to Product List</span>
               </button>
             </div>
           </div>
