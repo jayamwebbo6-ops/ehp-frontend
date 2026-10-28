@@ -302,7 +302,7 @@ export default function AllSpareParts() {
                       </td>
 
                       {/* Spare Part Name */}
-                      <td className="px-6 py-4 font-bold text-slate-800">
+                      <td className="px-6 py-4 font-bold text-slate-800 whitespace-pre-line">
                         <div>
                           <span>{part.name}</span>
                           {part.description && (

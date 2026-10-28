@@ -252,17 +252,18 @@ export default function AddSparePart() {
               <label className="block text-sm font-semibold text-slate-700">
                 Spare Parts Name <span className="text-rose-500">*</span>
               </label>
-              <input
-                type="text"
+              <textarea
                 name="name"
+                rows={2}
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="e.g. Hydraulic Seal Kit 40mm"
-                className={`w-full px-3.5 py-2.5 bg-slate-50/40 border rounded-xl text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white transition-all outline-none ${errors.name
+                className={`w-full resize-y px-3.5 py-2.5 bg-slate-50/40 border rounded-xl text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white transition-all outline-none ${errors.name
                   ? 'border-rose-400 bg-rose-50/10 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20'
                   : 'border-slate-200 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20'
                   }`}
               />
+              <p className="text-[11px] text-slate-400">Press Shift+Enter to start a new line.</p>
               {errors.name && <p className="text-[11px] text-rose-600 font-semibold mt-1">{errors.name}</p>}
             </div>
 

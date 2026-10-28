@@ -304,10 +304,6 @@ export default function AddProduct() {
       newErrors.name = 'Product name is required'
     }
 
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required'
-    }
-
     if (formData.unitPrice === '' || formData.unitPrice === null) {
       newErrors.unitPrice = 'Unit price is required'
     } else {
@@ -410,17 +406,18 @@ export default function AddProduct() {
                 <label className="block text-sm font-semibold text-slate-700">
                   Product / Service Name <span className="text-rose-500">*</span>
                 </label>
-                <input
-                  type="text"
+                <textarea
                   name="name"
+                  rows={2}
                   value={formData.name}
                   onChange={handleChange}
                   placeholder="e.g. Industrial Heavy Duty Mixer 500L"
-                  className={`w-full px-3 py-2 bg-slate-50/40 border rounded-xl text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white transition-all outline-none ${errors.name
+                  className={`w-full resize-y px-3 py-2 bg-slate-50/40 border rounded-xl text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white transition-all outline-none ${errors.name
                     ? 'border-rose-400 bg-rose-50/10 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20'
                     : 'border-slate-200 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20'
                     }`}
                 />
+                <p className="text-[11px] text-slate-400">Press Shift+Enter to start a new line.</p>
                 {errors.name && <p className="text-[11px] text-rose-600 font-semibold mt-1">{errors.name}</p>}
               </div>
 
@@ -531,7 +528,7 @@ export default function AddProduct() {
               {/* Product Description */}
               <div className="space-y-1.5 flex-1 flex flex-col">
                 <label className="block text-sm font-semibold text-slate-700">
-                  Product Description {formData.productType === 'Scale' && <span className="text-rose-500">*</span>}
+                  Product Description <span className="text-slate-400 font-normal text-xs">(optional)</span>
                 </label>
                 <textarea
                   name="description"
@@ -539,10 +536,7 @@ export default function AddProduct() {
                   value={formData.description}
                   onChange={handleChange}
                   placeholder="Enter comprehensive description, specifications, and parameters..."
-                  className={`w-full flex-1 min-h-[140px] px-3 py-2 bg-slate-50/40 border rounded-xl text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white transition-all outline-none ${errors.description
-                    ? 'border-rose-400 bg-rose-50/10 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20'
-                    : 'border-slate-200 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20'
-                    }`}
+                  className="w-full flex-1 min-h-[140px] px-3 py-2 bg-slate-50/40 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 transition-all outline-none"
                 ></textarea>
                 {errors.description && <p className="text-[11px] text-rose-600 font-semibold mt-1">{errors.description}</p>}
               </div>

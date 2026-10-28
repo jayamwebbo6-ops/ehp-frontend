@@ -323,7 +323,7 @@ export default function AllProducts() {
                       </td>
 
                       {/* Name */}
-                      <td className="px-6 py-4 font-bold text-slate-800">
+                      <td className="px-6 py-4 font-bold text-slate-800 whitespace-pre-line">
                         {p.name}
                       </td>
 
@@ -628,4 +628,3 @@ export default function AllProducts() {
     </div>
   )
 }
-

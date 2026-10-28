@@ -592,7 +592,7 @@ const CurrentClassicTemplate = forwardRef(function CurrentClassicTemplate(
                               </div>
                             )}
                             <div style={{ flex: 1 }}>
-                              <div style={{ fontWeight: '700', fontSize: '9.5pt', color: '#000000', marginBottom: '2px' }}>
+                              <div style={{ fontWeight: '700', fontSize: '9.5pt', color: '#000000', marginBottom: '2px', whiteSpace: 'pre-line' }}>
                                 {name}
                               </div>
                               {desc && (

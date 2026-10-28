@@ -532,7 +532,7 @@ const SparePartsTemplate = forwardRef(({ formData, companySettings, exchangeRate
                             </div>
                           )}
                           <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: '700', color: '#000000', fontSize: '9.5pt' }}>{item.productName || item.desc}</div>
+                            <div style={{ fontWeight: '700', color: '#000000', fontSize: '9.5pt', whiteSpace: 'pre-line' }}>{item.productName || item.desc}</div>
                             {item.productDesc && (
                               <div style={{ fontSize: '9.5pt', color: '#333333', marginTop: '3px', whiteSpace: 'pre-line', lineHeight: '1.5' }}>
                                 {item.productDesc}
