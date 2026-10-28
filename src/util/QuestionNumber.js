@@ -2,16 +2,16 @@
  * Quotation Number Generator & Helper Utilities
  * 
  * Rules:
- * 1. Spares Quotation Format: EHPINDIA/TSV/VV/LV/{SEQ}/SPARES (Starts at 026)
- * 2. Scales Quotation Format: EHPINDIA/TSV/VV/LV/{SEQ}/AAA (Starts at 044)
+ * 1. Spares Quotation Format: EHPINDIA/TSV/VV/{SEQ}/SPARES
+ * 2. Scales Quotation Format: EHPINDIA/TSV/VV/{SEQ}/AAA
  * 3. Sequence Strategy: Lowest missing / available sequence number starting from base
  *    (Allows reusing sequence numbers after deletion, while preventing duplicates if present).
  */
 
-export const SCALE_PREFIX = 'EHPINDIA/TSV/VV/LV/'
+export const SCALE_PREFIX = 'EHPINDIA/TSV/VV/'
 export const SCALE_SUFFIX = '/AAA'
 
-export const SPARE_PREFIX = 'EHPINDIA/TSV/VV/LV/'
+export const SPARE_PREFIX = 'EHPINDIA/TSV/VV/'
 export const SPARE_SUFFIX = '/SPARES'
 
 /**
@@ -25,6 +25,25 @@ export const extractSequenceNumber = (quoteNo, type = 'scale') => {
   const trimmed = quoteNo.trim()
 
   const isSpareType = type === 'spares' || type === 'Spare Parts'
+  const prefix = isSpareType ? SPARE_PREFIX : SCALE_PREFIX
+  const suffix = isSpareType ? SPARE_SUFFIX : SCALE_SUFFIX
+  const legacyPrefix = `${prefix}LV/`
+  const lowerQuoteNo = trimmed.toLowerCase()
+  const lowerLegacyPrefix = legacyPrefix.toLowerCase()
+  const lowerPrefix = prefix.toLowerCase()
+  const lowerSuffix = suffix.toLowerCase()
+
+  if (lowerQuoteNo.endsWith(lowerSuffix)) {
+    let sequence = null
+    if (lowerQuoteNo.startsWith(lowerLegacyPrefix)) {
+      sequence = trimmed.slice(legacyPrefix.length, -suffix.length)
+    } else if (lowerQuoteNo.startsWith(lowerPrefix)) {
+      sequence = trimmed.slice(prefix.length, -suffix.length)
+    }
+    if (sequence !== null) {
+      return /^\d+$/.test(sequence) ? parseInt(sequence, 10) : null
+    }
+  }
 
   if (isSpareType) {
     // Match .../064/SPARES or .../026/SPARES
@@ -36,7 +55,7 @@ export const extractSequenceNumber = (quoteNo, type = 'scale') => {
     if (match) return parseInt(match[1], 10)
   }
 
-  // General slash extraction fallback: EHPINDIA/TSV/VV/LV/{seq}/...
+  // General slash extraction fallback for older quotation formats.
   const slashParts = trimmed.split('/')
   if (slashParts.length >= 3) {
     const candidate = slashParts[slashParts.length - 2].trim()
@@ -173,23 +192,38 @@ export const parseQuotationNumberParts = (quoteNo, type = 'scale') => {
 
   const trimmed = quoteNo.trim()
 
-  // Match: (prefix)/{digits}/(suffix)
-  if (isSpareType) {
-    const match = trimmed.match(/^(.*\/)(\d+)(\/SPARES)$/i)
-    if (match) {
-      return { prefix: match[1], seqStr: match[2], suffix: match[3].toUpperCase() }
+  const suffixPattern = isSpareType ? SPARE_SUFFIX : SCALE_SUFFIX
+  const normalizedNumber = trimmed.match(new RegExp(`(${suffixPattern})$`, 'i'))
+  if (normalizedNumber) {
+    const numberBody = trimmed.slice(0, -normalizedNumber[1].length)
+    const legacyPrefix = `${defaultPrefix}LV/`
+    if (numberBody.toLowerCase().startsWith(legacyPrefix.toLowerCase())) {
+      return {
+        prefix: defaultPrefix,
+        seqStr: numberBody.slice(legacyPrefix.length),
+        suffix: normalizedNumber[1].toUpperCase()
+      }
     }
-  } else {
-    const match = trimmed.match(/^(.*\/)(\d+)(\/AAA)$/i)
-    if (match) {
-      return { prefix: match[1], seqStr: match[2], suffix: match[3].toUpperCase() }
+    if (numberBody.toLowerCase().startsWith(defaultPrefix.toLowerCase())) {
+      return {
+        prefix: defaultPrefix,
+        seqStr: numberBody.slice(defaultPrefix.length),
+        suffix: normalizedNumber[1].toUpperCase()
+      }
     }
   }
 
-  // Fallback pattern: anything ending with digits before slash or end
-  const generalMatch = trimmed.match(/^(.*\/)(\d+)(\/[^\/]*)$/)
+  // Match a text or numeric sequence, also accepting legacy prefixes containing /LV/.
+  const match = trimmed.match(new RegExp(`^(.*\\/)([^/]+)(${suffixPattern})$`, 'i'))
+  if (match) {
+    const prefix = match[1].replace(/LV\/$/i, '')
+    return { prefix, seqStr: match[2], suffix: match[3].toUpperCase() }
+  }
+
+  // Fallback pattern for older quotation formats.
+  const generalMatch = trimmed.match(/^(.*\/)([^/]+)(\/[^/]*)$/)
   if (generalMatch) {
-    return { prefix: generalMatch[1], seqStr: generalMatch[2], suffix: generalMatch[3] }
+    return { prefix: generalMatch[1].replace(/LV\/$/i, ''), seqStr: generalMatch[2], suffix: generalMatch[3] }
   }
 
   const seq = extractSequenceNumber(trimmed, type)

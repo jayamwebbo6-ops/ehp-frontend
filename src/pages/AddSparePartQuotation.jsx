@@ -607,17 +607,17 @@ export default function AddSparePartQuotation() {
   }, [activeTab, companySettings])
 
   const handleQuoteSeqChange = (e) => {
-    const rawDigits = e.target.value.replace(/\D/g, '')
+    const sequence = e.target.value
     const { prefix, suffix } = parseQuotationNumberParts(formData.quoteNo, 'spares')
-    const newQuoteNo = rawDigits ? `${prefix}${rawDigits}${suffix}` : ''
+    const newQuoteNo = sequence ? `${prefix}${sequence}${suffix}` : ''
 
     setFormData(prev => ({
       ...prev,
       quoteNo: newQuoteNo
     }))
 
-    if (!rawDigits) {
-      setErrors(prev => ({ ...prev, quoteNo: 'Quotation sequence number is required' }))
+    if (!sequence.trim()) {
+      setErrors(prev => ({ ...prev, quoteNo: 'Quotation number is required' }))
     } else {
       const isDup = isQuotationNumberExists(newQuoteNo, allQuotations, isEditMode ? id : null)
       setErrors(prev => ({
@@ -632,8 +632,8 @@ export default function AddSparePartQuotation() {
   const handleQuoteSeqBlur = () => {
     const { prefix, seqStr, suffix } = parseQuotationNumberParts(formData.quoteNo, 'spares')
     if (seqStr) {
-      const padded = seqStr.padStart(3, '0')
-      const newQuoteNo = `${prefix}${padded}${suffix}`
+      const sequence = /^\d+$/.test(seqStr) ? seqStr.padStart(3, '0') : seqStr.trim()
+      const newQuoteNo = `${prefix}${sequence}${suffix}`
       setFormData(prev => ({ ...prev, quoteNo: newQuoteNo }))
       const isDup = isQuotationNumberExists(newQuoteNo, allQuotations, isEditMode ? id : null)
       setErrors(prev => ({
@@ -1293,8 +1293,6 @@ export default function AddSparePartQuotation() {
                 </span>
                 <input
                   type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
                   value={parseQuotationNumberParts(formData.quoteNo, 'spares').seqStr}
                   onChange={handleQuoteSeqChange}
                   onBlur={handleQuoteSeqBlur}
