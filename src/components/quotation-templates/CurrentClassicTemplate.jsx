@@ -792,7 +792,7 @@ const CurrentClassicTemplate = forwardRef(function CurrentClassicTemplate(
                 rows.push(
                   <tr key="total-summary-row" style={{ borderTop: '1px solid #000000' }}>
                     <td colSpan={isGstEnabled ? 3 : 2} style={{ ...tdBase, border: 'none', fontSize: '9.5pt' }}>
-                      Total Items / Qty : {totalRows}
+                      Total Items : {totalRows}
                     </td>
                     <td colSpan={2} style={{ ...tdBase, ...getAmountStyle(formData.grandTotal, 9.5, true), border: '1.5px solid #000000', textAlign: 'right', fontWeight: '700', whiteSpace: 'nowrap' }}>
                       Total
@@ -806,12 +806,9 @@ const CurrentClassicTemplate = forwardRef(function CurrentClassicTemplate(
                 rows.push(
                   <tr key="payable-summary-row">
                     <td colSpan={isGstEnabled ? 6 : 5} style={{ ...tdBase, border: '1px solid #000000', textAlign: 'right', padding: '8px 10px' }}>
-                      <span style={{ fontSize: '9.5pt', fontWeight: '600' }}>Amount Payable: </span>
-                      <span style={{ fontWeight: '800', fontSize: '9.5pt', fontVariantNumeric: 'tabular-nums', marginLeft: '2px' }}>
-                        {currSymbol}{fmt(formData.grandTotal)}
-                      </span>
+                     
                       <span style={{ fontSize: '9.5pt', color: '#475569', fontStyle: 'italic', marginLeft: '6px' }}>
-                        ({formData.amountInWords || ''})
+                        {formData.amountInWords || ''}
                       </span>
                     </td>
                   </tr>
@@ -1048,9 +1045,6 @@ const CurrentClassicTemplate = forwardRef(function CurrentClassicTemplate(
                 </td>
 
                 <td style={{ verticalAlign: 'top', textAlign: 'right', padding: 0, border: 'none', width: '180px' }}>
-                  <div style={{ fontSize: '9.5pt', marginBottom: '6px' }}>
-                    For {companySettings?.companyName || 'YOUR COMPANY'}
-                  </div>
                   <div style={{ height: '58px', width: '120px', marginLeft: 'auto', position: 'relative' }}>
                     {(() => {
                       const sealVal = companySettings?.companySeal || companySettings?.sealImage || companySettings?.seal || formData?.companySeal || formData?.sealImage || formData?.seal

@@ -601,7 +601,7 @@ const SparePartsTemplate = forwardRef(({ formData, companySettings, exchangeRate
                 rows.push(
                   <tr key="total-summary-row" style={{ borderTop: '1px solid #000000' }}>
                     <td colSpan={4} style={{ ...tdBase, border: 'none', fontSize: '9.5pt' }}>
-                      Total Items / Qty : {formData.items ? formData.items.length : 0}
+                      Total Items: {formData.items ? formData.items.length : 0}
                     </td>
                     <td colSpan={2} style={{ ...tdBase, ...getAmountStyle(formData.grandTotal, 9.5, true), border: '1.5px solid #000000', textAlign: 'right', fontWeight: '700', whiteSpace: 'nowrap' }}>
                       Total
@@ -703,9 +703,6 @@ const SparePartsTemplate = forwardRef(({ formData, companySettings, exchangeRate
               </td>
 
               <td style={{ verticalAlign: 'top', textAlign: 'right', padding: 0, border: 'none', width: '180px' }}>
-                <div style={{ fontSize: '9.5pt', marginBottom: '6px', fontWeight: '600' }}>
-                  For {companySettings?.companyName || 'EHP INDIA'}
-                </div>
                 <div style={{ height: '58px', width: '120px', marginLeft: 'auto', position: 'relative' }}>
                   {(() => {
                     const sealVal = companySettings?.companySeal || companySettings?.sealImage || companySettings?.seal || formData?.companySeal || formData?.sealImage || formData?.seal
