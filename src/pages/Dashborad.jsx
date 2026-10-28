@@ -320,7 +320,7 @@ export default function Dashborad() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 border border-slate-100 rounded-[5px] shadow-sm">
           <div className="min-w-0">
             <h1 className="text-2xl font-bold tracking-tight text-brand-primary">Dashboard Overview</h1>
-            <p className="text-sm text-slate-500 mt-1">Real-time metrics, active product catalog, and quotation version statistics.</p>
+            <p className="text-sm text-slate-500 mt-1">Real-time metrics, active product catalog, and quotation activity.</p>
           </div>
         </div>
 
@@ -405,13 +405,10 @@ export default function Dashborad() {
                 {isLoading ? (
                   [...Array(5)].map((_, index) => (
                     <tr key={index}>
-                      {/* Quote No + Version badge + Date skeleton */}
+                      {/* Quotation number and date skeleton */}
                       <td className="px-6 py-4">
                         <div className="animate-pulse space-y-1">
-                          <div className="flex items-center gap-2">
-                            <div className="h-4 w-20 bg-slate-200 rounded"></div>
-                            <div className="h-4 w-8 bg-slate-100 rounded"></div>
-                          </div>
+                          <div className="h-4 w-20 bg-slate-200 rounded"></div>
                           <div className="h-3 w-24 bg-slate-100 rounded"></div>
                         </div>
                       </td>
@@ -448,12 +445,7 @@ export default function Dashborad() {
                     <tr key={qt._id || qt.id} className="hover:bg-slate-50/50 transition-colors group">
                       <td className="px-6 py-4">
                         <div className="flex flex-col gap-0.5">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-slate-800">{qt.quoteNo}</span>
-                            <span className="inline-flex items-center px-1.5 py-0.5 bg-brand-accent-light text-brand-accent border border-brand-accent/10 rounded-[3px] font-bold text-[10px]">
-                              {typeof qt.version === 'number' ? `V${qt.version}` : (qt.version || 'V1')}
-                            </span>
-                          </div>
+                          <span className="font-bold text-slate-800">{qt.quoteNo}</span>
                           {qt.date && (
                             <span className="text-xs text-slate-500 font-semibold">
                               Date: {formatDate(qt.date)}

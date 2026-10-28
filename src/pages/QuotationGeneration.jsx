@@ -98,7 +98,6 @@ const SAMPLE_QUOTATION = {
   igstTotal: 25110,
   grandTotal: 164610,
   amountInWords: "Rupees One Lakh Sixty-Four Thousand Six Hundred Ten Only",
-  version: 1,
   deliveryTerms: {
     period: "2-3 Weeks",
     location: "CIF Destination",
@@ -169,7 +168,6 @@ const SAMPLE_SPARE_PARTS_QUOTATION = {
   igstTotal: 5985,
   grandTotal: 39235,
   amountInWords: "Rupees Thirty-Nine Thousand Two Hundred Thirty-Five Only",
-  version: 1,
   deliveryTerms: {
     period: "1-2 Weeks",
     location: "Ex-Works / CIF Destination",
@@ -235,7 +233,6 @@ export default function QuotationGeneration() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterDateStart, setFilterDateStart] = useState('')
   const [filterDateEnd, setFilterDateEnd] = useState('')
-  const [filterVersion, setFilterVersion] = useState('')
   const [filterProductType, setFilterProductType] = useState('')
 
   // Pagination state
@@ -389,7 +386,7 @@ export default function QuotationGeneration() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchQuery, filterDateStart, filterDateEnd, filterVersion, filterProductType])
+  }, [searchQuery, filterDateStart, filterDateEnd, filterProductType])
 
   // Show Toast
   const showNotification = (type, message) => {
@@ -399,14 +396,6 @@ export default function QuotationGeneration() {
     }, 4000)
   }
 
-  // Dynamic unique versions list from actual documents
-  const uniqueVersions = Array.from(
-    new Set(quotations.map(q => {
-      const val = q.version
-      return typeof val === 'number' ? `V${val}` : (val || 'V1')
-    }))
-  ).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
-
   // Filter
   const filteredQuotations = quotations.filter(q => {
     // Search Query Filter
@@ -414,12 +403,6 @@ export default function QuotationGeneration() {
       q.quoteNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
       q.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (q.companyName && q.companyName.toLowerCase().includes(searchQuery.toLowerCase()))
-
-    // Version Filter
-    const matchesVersion = !filterVersion || (() => {
-      const qVer = typeof q.version === 'number' ? `V${q.version}` : (q.version || 'V1')
-      return qVer === filterVersion
-    })()
 
     // Product Type Filter
     const matchesProductType = !filterProductType || (() => {
@@ -441,7 +424,7 @@ export default function QuotationGeneration() {
       matchesDate = false
     }
 
-    return matchesSearch && matchesVersion && matchesProductType && matchesDate
+    return matchesSearch && matchesProductType && matchesDate
   })
 
   // Checkbox selection handlers
@@ -509,12 +492,12 @@ export default function QuotationGeneration() {
     const isSpare = (quote.productType === 'Spare Parts') || (quote.quoteNo && /SPARES/i.test(quote.quoteNo))
     const newQuoteNo = generateNextQuotationNumber(quotations, isSpare ? 'spares' : 'scale')
 
-    // Copy quote and change only ID, quoteNo and version
+    // Copy quote with a new ID and quotation number
     const duplicatedQuote = {
       ...quote,
       quoteNo: newQuoteNo,
-      version: 1
     }
+    delete duplicatedQuote.version
 
     // Remove read-only properties
     delete duplicatedQuote._id
@@ -691,7 +674,7 @@ export default function QuotationGeneration() {
     }
   }
 
-  // Sort by selected column, with quote number and version as secondary criteria
+  // Sort by selected column, using quotation number as a secondary criterion
   const sortedQuotations = [...filteredQuotations].sort((a, b) => {
     if (sortField === 'lastUpdated') {
       const dateA = new Date(a.lastUpdated || a.updatedAt || a.createdAt || a.date || 0)
@@ -705,14 +688,9 @@ export default function QuotationGeneration() {
     if (typeof valA === 'string') valA = valA.trim().toLowerCase()
     if (typeof valB === 'string') valB = valB.trim().toLowerCase()
 
-    let comp = 0
+    let comp
     if (sortField === 'quoteNo') {
       comp = String(valA).localeCompare(String(valB), undefined, { numeric: true, sensitivity: 'base' })
-      if (comp === 0) {
-        const verA = typeof a.version === 'number' ? `V${a.version}` : (a.version || '')
-        const verB = typeof b.version === 'number' ? `V${b.version}` : (b.version || '')
-        comp = verA.localeCompare(verB, undefined, { numeric: true })
-      }
     } else {
       if (typeof valA === 'number' && typeof valB === 'number') {
         comp = valA - valB
@@ -723,11 +701,6 @@ export default function QuotationGeneration() {
         const quoteA = a.quoteNo || ''
         const quoteB = b.quoteNo || ''
         comp = quoteA.localeCompare(quoteB, undefined, { numeric: true, sensitivity: 'base' })
-        if (comp === 0) {
-          const verA = typeof a.version === 'number' ? `V${a.version}` : (a.version || '')
-          const verB = typeof b.version === 'number' ? `V${b.version}` : (b.version || '')
-          comp = verA.localeCompare(verB, undefined, { numeric: true })
-        }
       }
     }
 
@@ -761,7 +734,7 @@ export default function QuotationGeneration() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 border border-slate-100 rounded-[5px] shadow-sm">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-brand-primary">Quotation Management</h1>
-            <p className="text-sm text-slate-500 mt-1">Generate, edit, and print official business quotations and version configurations.</p>
+            <p className="text-sm text-slate-500 mt-1">Generate, edit, and print official business quotations.</p>
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -825,7 +798,7 @@ export default function QuotationGeneration() {
 
           {/* Controls */}
           <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3 items-end">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 items-end">
               {/* Search */}
               <div className="space-y-1 sm:col-span-2 md:col-span-2">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Search</label>
@@ -881,20 +854,6 @@ export default function QuotationGeneration() {
                 />
               </div>
 
-              {/* Version Filter */}
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Version</label>
-                <select
-                  value={filterVersion}
-                  onChange={(e) => setFilterVersion(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-[5px] text-sm focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all bg-white text-slate-600 font-medium"
-                >
-                  <option value="">All Versions</option>
-                  {uniqueVersions.map(v => (
-                    <option key={v} value={v}>{v}</option>
-                  ))}
-                </select>
-              </div>
             </div>
 
             <div className="flex flex-col sm:flex-row justify-end items-center gap-3 pt-2 border-t border-slate-100/50">
@@ -910,13 +869,12 @@ export default function QuotationGeneration() {
                 )}
               </div>
 
-              {(searchQuery || filterDateStart || filterDateEnd || filterVersion || filterProductType) && (
+              {(searchQuery || filterDateStart || filterDateEnd || filterProductType) && (
                 <button
                   onClick={() => {
                     setSearchQuery('')
                     setFilterDateStart('')
                     setFilterDateEnd('')
-                    setFilterVersion('')
                     setFilterProductType('')
                   }}
                   className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 hover:border-brand-accent hover:text-brand-accent text-slate-500 text-xs font-semibold rounded-[5px] transition-all cursor-pointer bg-white"
@@ -1007,12 +965,7 @@ export default function QuotationGeneration() {
                         </td>
                       )}
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-800">{quote.quoteNo}</span>
-                          <span className="inline-flex items-center px-1.5 py-0.5 bg-brand-accent-light text-brand-accent border border-brand-accent/10 rounded-[3px] font-bold text-[10px]">
-                            {typeof quote.version === 'number' ? `V${quote.version}` : (quote.version || 'V1')}
-                          </span>
-                        </div>
+                        <span className="font-bold text-slate-800">{quote.quoteNo}</span>
                         <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <span className="text-[11px] text-slate-400 font-medium">Date: {formatDate(quote.date)}</span>
                           {quote.productType === 'Spare Parts' ? (
@@ -1361,14 +1314,9 @@ export default function QuotationGeneration() {
                 <h2 className="text-base font-bold text-slate-800">
                   Quotation Preview
                 </h2>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="mt-1">
                   <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-[5px] font-mono font-medium border border-slate-200">
                     {selectedQuotation.quoteNo}
-                  </span>
-                  <span className="text-[10px] bg-brand-accent/10 text-brand-accent border border-brand-accent/20 px-2 py-0.5 rounded-[5px] font-bold uppercase tracking-wider">
-                    {typeof selectedQuotation.version === 'number'
-                      ? `V${selectedQuotation.version}`
-                      : (selectedQuotation.version || 'V1')}
                   </span>
                 </div>
               </div>

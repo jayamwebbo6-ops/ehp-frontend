@@ -82,15 +82,9 @@ export default function AddQuotation() {
   // Tab workspace state: 'customer' | 'requirements' | 'products' | 'transport_installation' | 'section' | 'preview'
   const [activeTab, setActiveTab] = useState('customer')
 
-  const [showVersionModal, setShowVersionModal] = useState(false)
-  const [versionOptions, setVersionOptions] = useState({ exists: false, highestVersionStr: 'V1', highestVersionNum: 1, matchingQuotes: [] })
-  const [saveAsNewVersion, setSaveAsNewVersion] = useState(false)
-  const [overwriteExistingQuoteId, setOverwriteExistingQuoteId] = useState(null)
-
   // Form State
   const [formData, setFormData] = useState({
     quoteNo: '',
-    version: 1,
     date: new Date().toISOString().split('T')[0],
     validity: '',
     currency: '',
@@ -311,7 +305,7 @@ export default function AddQuotation() {
     }
     fetchRequirementsData()
 
-    // Load all quotations from API for version checking
+    // Load all quotations from API for duplicate-number checks
     const fetchAllQuotations = async () => {
       try {
         const data = await getQuotations()
@@ -1611,96 +1605,6 @@ export default function AddQuotation() {
     return isValid
   }
 
-  const checkQuotationExistsAndGetVersions = (quoteNo) => {
-    if (!quoteNo) return { exists: false, versions: [], highestVersionStr: 'V1', highestVersionNum: 1, matchingQuotes: [] }
-    try {
-      const list = allQuotations
-      if (!Array.isArray(list)) return { exists: false, versions: [], highestVersionStr: 'V1', highestVersionNum: 1, matchingQuotes: [] }
-
-      // Filter quotes matching the current quoteNo (case-insensitive) safely
-      let matching = list.filter(q => q && q.quoteNo && q.quoteNo.trim().toLowerCase() === quoteNo.trim().toLowerCase())
-
-      if (matching.length === 0) {
-        return { exists: false, versions: [], highestVersionStr: 'V1', highestVersionNum: 1, matchingQuotes: [] }
-      }
-
-      // Extract versions
-      const versions = matching.map(q => {
-        const v = q.version
-        return typeof v === 'number' ? `V${v}` : (v || 'V1')
-      })
-
-      // Find the version of the quotation we are currently editing
-      const currentEditQuote = isEditMode && id ? matching.find(q => (q._id || q.id || '').toString() === id.toString()) : null
-      const currentEditVersionNum = currentEditQuote ? (Number(currentEditQuote.version) || 1) : 1
-      const currentEditVersionStr = `V${currentEditVersionNum}`
-
-      // Parse highest version
-      let maxNum = 1
-      matching.forEach(q => {
-        const val = q.version
-        let num = 1
-        if (typeof val === 'number') {
-          num = val
-        } else if (typeof val === 'string') {
-          num = parseInt(val.replace(/\D/g, '')) || 1
-        }
-        if (num > maxNum) {
-          maxNum = num
-        }
-      })
-      const maxStr = `V${maxNum}`
-
-      return {
-        exists: true,
-        matchingQuotes: matching,
-        versions,
-        highestVersionStr: maxStr,
-        highestVersionNum: maxNum,
-        currentEditVersionStr: currentEditVersionStr
-      }
-    } catch (e) {
-      console.error("Error checking quotation versions:", e)
-      return { exists: false, versions: [], highestVersionStr: 'V1', highestVersionNum: 1, matchingQuotes: [] }
-    }
-  }
-
-  const handleSelectVersionOption = (option) => {
-    if (option === 'existing') {
-      setSaveAsNewVersion(false)
-      if (isEditMode) {
-        const currentEditQuote = versionOptions.matchingQuotes.find(q => (q._id || q.id || '').toString() === id.toString())
-        const curVerNum = currentEditQuote ? (Number(currentEditQuote.version) || 1) : 1
-        setFormData(prev => ({
-          ...prev,
-          version: curVerNum
-        }))
-      } else {
-        const match = versionOptions.matchingQuotes.find(q => {
-          const vNum = typeof q.version === 'number' ? q.version : (parseInt(q.version?.replace(/\D/g, '')) || 1)
-          return vNum === versionOptions.highestVersionNum
-        })
-        if (match) {
-          setOverwriteExistingQuoteId(match._id || match.id)
-        }
-        setFormData(prev => ({
-          ...prev,
-          version: versionOptions.highestVersionNum
-        }))
-      }
-    } else if (option === 'new') {
-      setSaveAsNewVersion(true)
-      setOverwriteExistingQuoteId(null)
-      const nextVerNum = versionOptions.highestVersionNum + 1
-      setFormData(prev => ({
-        ...prev,
-        version: nextVerNum
-      }))
-    }
-    setShowVersionModal(false)
-    setActiveTab('preview')
-  }
-
   const handleTabChange = (nextTab) => {
     // Validate customer tab first if leaving customer tab
     if (activeTab === 'customer' && nextTab !== 'customer') {
@@ -1733,10 +1637,6 @@ export default function AddQuotation() {
         }))
         return
       }
-      setFormData(prev => ({
-        ...prev,
-        version: isEditMode ? (Number(prev.version) || 1) : 1
-      }))
       setActiveTab('preview')
     } else {
       setActiveTab(nextTab)
@@ -1796,16 +1696,8 @@ export default function AddQuotation() {
     setIsSavingAndDownloading(true)
 
     // Determine if we are updating an existing document
-    let isUpdate = false
-    let updateId = null
-
-    if (isEditMode && !saveAsNewVersion) {
-      isUpdate = true
-      updateId = formData._id || formData.id
-    } else if (!isEditMode && overwriteExistingQuoteId) {
-      isUpdate = true
-      updateId = overwriteExistingQuoteId
-    }
+    const isUpdate = isEditMode
+    const updateId = formData._id || formData.id
 
     const isEuropeBank = formData.country === 'Europe' || formData.currency === 'EUR'
     const bankDetailsPayload = {
@@ -1946,6 +1838,7 @@ export default function AddQuotation() {
     delete payload.__v
     delete payload.createdAt
     delete payload.updatedAt
+    delete payload.version
 
     try {
       let savedQuotation = null
@@ -3715,79 +3608,6 @@ export default function AddQuotation() {
           </div>
         </div>
       </div>
-
-      {/* Version Modal */}
-      {showVersionModal && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200 w-full h-full min-h-screen">
-          <div className="relative w-full max-w-md bg-white border border-slate-200 shadow-2xl rounded-[5px] overflow-hidden p-6 space-y-6 animate-in zoom-in-95 duration-200 text-left">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-base font-bold text-slate-800">Quotation Version Detection</h3>
-                <p className="text-xs text-slate-400 mt-1">
-                  Quotation number <span className="font-semibold text-slate-650">"{formData.quoteNo}"</span> already exists.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowVersionModal(false)}
-                className="p-1 text-slate-400 hover:text-slate-655 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer animate-in duration-100"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {/* Option 1: Edit/Overwrite Existing */}
-              <button
-                type="button"
-                onClick={() => handleSelectVersionOption('existing')}
-                className="w-full text-left p-4 border border-slate-100 hover:border-brand-accent hover:bg-brand-accent-light/10 rounded-[5px] transition-all duration-200 group cursor-pointer"
-              >
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-sm text-slate-850 group-hover:text-brand-accent">
-                    Use Existing Version ({isEditMode ? versionOptions.currentEditVersionStr : versionOptions.highestVersionStr})
-                  </span>
-                  <span className="text-[10px] bg-slate-50 text-slate-400 border border-slate-100 px-2 py-0.5 rounded font-medium">
-                    Overwrite
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mt-1.5 leading-normal">
-                  Saves your changes directly to version {isEditMode ? versionOptions.currentEditVersionStr : versionOptions.highestVersionStr}. The original version will be updated.
-                </p>
-              </button>
-
-              {/* Option 2: Create New Version */}
-              <button
-                type="button"
-                onClick={() => handleSelectVersionOption('new')}
-                className="w-full text-left p-4 border border-slate-100 hover:border-brand-accent hover:bg-brand-accent-light/10 rounded-[5px] transition-all duration-200 group cursor-pointer"
-              >
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-sm text-slate-850 group-hover:text-brand-accent">
-                    Create New Version (V{versionOptions.highestVersionNum + 1})
-                  </span>
-                  <span className="text-[10px] bg-brand-accent-light text-brand-accent border border-brand-accent/10 px-2 py-0.5 rounded font-bold">
-                    New Version
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mt-1.5 leading-normal">
-                  Increments the version number by +1. This creates a new standalone quotation document.
-                </p>
-              </button>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-3 border-t border-slate-50">
-              <button
-                type="button"
-                onClick={() => setShowVersionModal(false)}
-                className="px-4 py-2 border border-slate-200 hover:border-slate-350 hover:bg-slate-50 text-slate-500 text-xs font-semibold rounded-[5px] transition-all cursor-pointer"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Dynamic Section Modal */}
       {isModalOpen && (

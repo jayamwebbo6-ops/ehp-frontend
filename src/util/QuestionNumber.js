@@ -146,18 +146,6 @@ export const isQuotationNumberExists = (quoteNo, allQuotations = [], currentId =
 }
 
 /**
- * Formats quotation number for display / PDF with version.
- * @param {string} quoteNo 
- * @param {number|string} [version=1] 
- * @returns {string}
- */
-export const formatQuotationDisplay = (quoteNo, version = 1) => {
-  if (!quoteNo) return ''
-  const ver = typeof version === 'number' ? `V${version}` : (version || 'V1')
-  return `${quoteNo} ${ver}`
-}
-
-/**
  * Sanitizes quotation filename for downloading without illegal path characters.
  * @param {string} prefix 
  * @param {string} quoteNo 
@@ -213,4 +201,3 @@ export const parseQuotationNumberParts = (quoteNo, type = 'scale') => {
     suffix: defaultSuffix
   }
 }
-

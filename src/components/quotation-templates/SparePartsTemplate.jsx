@@ -160,9 +160,7 @@ const SparePartsTemplate = forwardRef(({ formData, companySettings, exchangeRate
   }
 
   const getQuotationNumber = () => {
-    const baseNumber = formData.quoteNo || 'QT-001'
-    const version = formData.version || 1
-    return `${baseNumber} V${version}`
+    return formData.quoteNo || 'QT-001'
   }
 
   const currSymbol = formData.currency === 'EUR' ? '€' : '₹'

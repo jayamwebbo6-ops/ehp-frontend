@@ -121,14 +121,9 @@ export default function AddSparePartQuotation() {
   // Active tab state: 'customer' | 'products' | 'section' | 'intro_content' | 'preview'
   const [activeTab, setActiveTab] = useState('customer')
 
-  const [showVersionModal, setShowVersionModal] = useState(false)
-  const [versionOptions, setVersionOptions] = useState({ exists: false, highestVersionStr: 'V1', highestVersionNum: 1, matchingQuotes: [] })
-  const [saveAsNewVersion, setSaveAsNewVersion] = useState(false)
-
   const [formData, setFormData] = useState({
     quoteNo: '',
     productType: 'Spare Parts',
-    version: 1,
     date: new Date().toISOString().split('T')[0],
     validity: '',
     currency: '',
@@ -1056,25 +1051,6 @@ export default function AddSparePartQuotation() {
     return Object.keys(errs).length === 0
   }
 
-  const checkQuotationExistsAndGetVersions = (quoteNo) => {
-    if (!quoteNo) return { exists: false, matchingQuotes: [] }
-    const matching = allQuotations.filter(q => q && q.quoteNo && q.quoteNo.trim().toLowerCase() === quoteNo.trim().toLowerCase())
-    if (matching.length === 0) return { exists: false, matchingQuotes: [] }
-
-    let maxNum = 1
-    matching.forEach(q => {
-      const num = typeof q.version === 'number' ? q.version : (parseInt(String(q.version).replace(/\D/g, '')) || 1)
-      if (num > maxNum) maxNum = num
-    })
-
-    return {
-      exists: true,
-      matchingQuotes: matching,
-      highestVersionNum: maxNum,
-      highestVersionStr: `V${maxNum}`
-    }
-  }
-
   const handleTabChange = (nextTab) => {
     if (activeTab === 'customer' && nextTab !== 'customer') {
       if (!validateTab('customer')) return
@@ -1093,7 +1069,6 @@ export default function AddSparePartQuotation() {
         }))
         return
       }
-      setFormData(prev => ({ ...prev, version: isEditMode ? (Number(prev.version) || 1) : 1 }))
       setActiveTab('preview')
       scrollToTop()
     } else {
@@ -1151,9 +1126,10 @@ export default function AddSparePartQuotation() {
 
       delete payload._id
       delete payload.id
+      delete payload.version
 
       let successMsg = 'Spare Parts Quotation saved successfully!'
-      if (isEditMode && !saveAsNewVersion) {
+      if (isEditMode) {
         await updateQuotation(id, payload)
         successMsg = 'Spare Parts Quotation updated successfully!'
       } else {
@@ -2330,70 +2306,6 @@ export default function AddSparePartQuotation() {
                 className="px-5 py-2 bg-brand-primary text-white text-xs font-semibold rounded-[5px] hover:bg-brand-primary-light cursor-pointer"
               >
                 Save Section
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Version Modal */}
-      {showVersionModal && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200 w-full h-full min-h-screen">
-          <div className="relative w-full max-w-md bg-white border border-slate-200 shadow-2xl rounded-[5px] overflow-hidden p-6 space-y-6 animate-in zoom-in-95 duration-200 text-left">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-base font-bold text-slate-800">Quotation Version Detection</h3>
-                <p className="text-xs text-slate-400 mt-1">
-                  Quotation number <span className="font-semibold text-slate-600">&quot;{formData.quoteNo}&quot;</span> already exists ({versionOptions.highestVersionStr}).
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowVersionModal(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setSaveAsNewVersion(false)
-                  setShowVersionModal(false)
-                  setActiveTab('preview')
-                }}
-                className="w-full text-left p-4 border border-slate-100 hover:border-brand-accent hover:bg-brand-accent-light/10 rounded-[5px] transition-all duration-200 group cursor-pointer"
-              >
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-sm text-slate-800 group-hover:text-brand-accent">
-                    Overwrite Version ({versionOptions.highestVersionStr})
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mt-1.5">
-                  Update existing quotation document directly.
-                </p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setSaveAsNewVersion(true)
-                  setFormData(prev => ({ ...prev, version: (versionOptions.highestVersionNum || 1) + 1 }))
-                  setShowVersionModal(false)
-                  setActiveTab('preview')
-                }}
-                className="w-full text-left p-4 border border-slate-100 hover:border-brand-accent hover:bg-brand-accent-light/10 rounded-[5px] transition-all duration-200 group cursor-pointer"
-              >
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-sm text-slate-800 group-hover:text-brand-accent">
-                    Create New Version (V{(versionOptions.highestVersionNum || 1) + 1})
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mt-1.5">
-                  Increments version number to V{(versionOptions.highestVersionNum || 1) + 1} and saves as new document.
-                </p>
               </button>
             </div>
           </div>

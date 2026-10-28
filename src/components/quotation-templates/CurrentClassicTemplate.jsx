@@ -234,9 +234,7 @@ const CurrentClassicTemplate = forwardRef(function CurrentClassicTemplate(
   }
 
   const getQuotationNumber = () => {
-    const baseNumber = formData.quoteNo || 'INV-001'
-    const version = formData.version || 1
-    return `${baseNumber} V${version}`
+    return formData.quoteNo || 'INV-001'
   }
 
   const hasFirstPageCover = companySettings?.showFirstPageContent && companySettings?.firstPageContent;
